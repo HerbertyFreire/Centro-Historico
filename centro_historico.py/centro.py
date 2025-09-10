@@ -160,19 +160,36 @@ def draw_ornate_window(center, size):
     # Esquadria azul
     draw_arched_opening((x, y, z), (sx, sy, sz), COLOR_DOOR_WINDOW)
 
-def draw_building_facade():
-    # Prédio principal
-    draw_cube((0, 4.75, 0), (20, 9.5, 8), COLOR_WALL)
 
-    # Cornijas horizontais
-    draw_cube((0, 3.5, 4.05), (20.5, 0.4, 0.3), COLOR_MOLDING)
-    draw_cube((0, 6.5, 4.05), (20.5, 0.4, 0.3), COLOR_MOLDING)
-    draw_cube((0, 9.5, 4.05), (20.5, 0.4, 0.3), COLOR_MOLDING)
+######################################
+def draw_building_facade():
+
+
+    # Desenha as 3 paredes do prédio principal que não são a fachada frontal
+    draw_cube((0, 4.75, -4.05), (20, 9.5, 0.1), COLOR_WALL) # Parede de trás
+    draw_cube((-10.05, 4.75, 0), (0.1, 9.5, 8), COLOR_WALL) # Parede lateral esquerda
+    draw_cube((10.05, 4.75, 0), (0.1, 9.5, 8), COLOR_WALL)  # Parede lateral direita
+
+    # Agora, a parede frontal, com o recorte para a porta. A face frontal está em z=4.05
+    # 1. Parte da parede frontal acima da porta
+    draw_cube((0, 6.15, 4.0), (20, 6.7, 0.1), COLOR_WALL)
+    
+    # 2. Parte da parede frontal à esquerda da porta
+    draw_cube((-5.55, 1.4, 4.0), (8.9, 2.8, 0.1), COLOR_WALL)
+    
+    # 3. Parte da parede frontal à direita da porta
+    draw_cube((5.55, 1.4, 4.0), (8.9, 2.8, 0.1), COLOR_WALL)
+
+    # Cornijas horizontais (um pouco à frente da parede)
+    draw_cube((0, 3.5, 4.1), (20.5, 0.4, 0.3), COLOR_MOLDING)
+    draw_cube((0, 6.5, 4.1), (20.5, 0.4, 0.3), COLOR_MOLDING)
+    draw_cube((0, 9.5, 4.1), (20.5, 0.4, 0.3), COLOR_MOLDING)
     
     # Portas/janelas do térreo
     for i in [-4, -3, -2, 2, 3, 4]:
         x_pos = i * 2.2
-        draw_arched_opening((x_pos, 1.4, 4.05), (1.6, 2.8, 0.1), COLOR_DOOR_WINDOW)
+        # MODIFICADO AQUI: z=4.05 para z=4.06 para ficar na frente da parede
+        draw_arched_opening((x_pos, 1.4, 4.06), (1.6, 2.8, 0.1), COLOR_DOOR_WINDOW)
         draw_balcony((x_pos, 0, 4.0), (1.8, 0.6))
         
     # Janelas + sacadas dos andares superiores
@@ -180,32 +197,40 @@ def draw_building_facade():
         y_pos = 1.4 + (floor * 3.0)
         for i in range(-4, 5):
             x_pos = i * 2.2
-            draw_ornate_window((x_pos, y_pos, 4.05), (1.6, 2.2, 0.1))
+            # MODIFICADO AQUI: z=4.05 para z=4.06 para ficar na frente da parede
+            draw_ornate_window((x_pos, y_pos, 4.06), (1.6, 2.2, 0.1))
             draw_balcony((x_pos, y_pos - 1.1 - 0.2, 4.0), (1.8, 1.0))
             
     # Estrutura do telhado
     draw_cube((0, 10.5, 2), (4, 1.5, 5), COLOR_MOLDING)
     draw_cube((0, 11.2, 2), (4.2, 0.2, 5.2), COLOR_ROOF)
+    
+ 
     draw_ornate_window((0, 10.5, 4.55), (1.0, 1.2, 0.1))
+
 
 def draw_interactive_double_door(is_open):
     angle = 90 if is_open else 0
-    door_width, door_height = 1.1, 2.8
+    door_width, door_height, door_thickness = 1.1, 2.8, 0.1 # Altura 2.8 para a porta
+
     
-    # Folha Esquerda
     glPushMatrix()
-    glTranslatef(-door_width, 0, 4.0)
-    glRotatef(angle, 0, 1, 0)
-    draw_arched_opening((door_width/2, door_height/2, 0), (door_width, door_height, 0.1), COLOR_DOOR_WINDOW)
-    glPopMatrix()
-    
-    # Folha Direita
-    glPushMatrix()
-    glTranslatef(door_width, 0, 4.0)
-    glRotatef(-angle, 0, 1, 0)
-    draw_arched_opening((-door_width/2, door_height/2, 0), (door_width, door_height, 0.1), COLOR_DOOR_WINDOW)
+
+    glTranslatef(-1.1, 0, 4.0 + door_thickness/2) # Desloca para a dobradiça da folha esquerda na frente
+    glRotatef(angle, 0, 1, 0)                   # Gira
+    glTranslatef(door_width/2, door_height/2, 0) # Translada o centro para desenhar o cubo
+    draw_cube((0, 0, 0), (door_width, door_height, door_thickness), COLOR_WOOD_DARK)
     glPopMatrix()
 
+    # Folha Direita (abre girando para fora do eixo direito)
+    glPushMatrix()
+   
+    glTranslatef(1.1, 0, 4.0 + door_thickness/2) # Desloca para a dobradiça da folha direita na frente
+    glRotatef(-angle, 0, 1, 0)                  # Gira (sentido inverso)
+    glTranslatef(-door_width/2, door_height/2, 0) # Translada o centro para desenhar o cubo
+    draw_cube((0, 0, 0), (door_width, door_height, door_thickness), COLOR_WOOD_DARK)
+    glPopMatrix()
+########################################
 def draw_ramp():
     ramp_color = (0.7, 0.7, 0.7)
     handrail_color = (0.4, 0.4, 0.4)
