@@ -7,6 +7,12 @@ O objetivo é criar uma modelagem 3D da **Biblioteca Estadual em Maceió** utili
 ## 🖼 Centro Histórico 
 ![Biblioteca Pública de Alagoas](fachadareal.jpg)
 
+## 🖥️ Tecnologias
+
+- [Python 3](https://www.python.org/)  
+- [OpenGL](https://www.opengl.org/)  
+- [PyGame](https://www.pygame.org/news)  
+
 ## 🛠 O que precisa para rodar?  
 
 ### 1. Python 3  
@@ -20,7 +26,11 @@ O objetivo é criar uma modelagem 3D da **Biblioteca Estadual em Maceió** utili
 
 ## ▶️ Como rodar localmente  
 
-1. **Clone o repositório ou baixe os arquivos do projeto.**  
+1. **Clone o repositório ou baixe os arquivos do projeto.**
+```bash
+   git clone https://github.com/HerbertyFreire/Centro-Historico.git
+
+   ```
 2. **Abra o terminal e navegue até a pasta do projeto:**  
    ```bash
    cd Centro-Historico
