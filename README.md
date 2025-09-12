@@ -1,15 +1,49 @@
 # Modelagem 3D da Biblioteca Pública de Alagoas
 
-## O que é?
+## 🎯 Objetivo  
+Esta atividade faz parte da disciplina de **Computação Gráfica**, valendo nota na **AB1** do curso de **Ciência da Computação**.  
+O objetivo é criar uma modelagem 3D da **Biblioteca Estadual em Maceió** utilizando **OpenGL**, a aplicação permite que o usuário explore a fachada e um interior simplificado do prédio histórico com uma câmera em primeira pessoa.
 
-Este projeto é uma visualização 3D interativa da Biblioteca Pública Estadual de Alagoas, localizada em Maceió. Utilizando Python, a aplicação permite que o usuário explore a fachada e um interior simplificado do prédio histórico com uma câmera em primeira pessoa, como em um jogo.
+## 🖼 Centro Histórico 
+![Biblioteca Pública de Alagoas](fachada.png)
 
-## O que precisa para rodar?
+## 🛠 O que precisa para rodar?  
 
-**1. Python 3:**
-   - Certifique-se de ter o [Python 3](https://www.python.org/downloads/) instalado em seu computador.
+### 1. Python 3  
+- Certifique-se de ter o [Python 3](https://www.python.org/downloads/) instalado em seu computador.  
 
-**2. Bibliotecas:**
-   - Abra seu terminal ou prompt de comando e instale as bibliotecas necessárias com o seguinte comando:
+### 2. Bibliotecas  
+- Abra seu terminal ou prompt de comando e instale as bibliotecas necessárias com o seguinte comando:  
+  ```bash
+  pip install pygame numpy PyOpenGL PyOpenGL_accelerate
+  ```
+
+## ▶️ Como rodar localmente  
+
+1. **Clone o repositório ou baixe os arquivos do projeto.**  
+2. **Abra o terminal e navegue até a pasta do projeto:**  
    ```bash
-   pip install pygame numpy PyOpenGL PyOpenGL_accelerate
+   cd Centro-Historico
+   ```
+3. **Entre na pasta onde está o arquivo principal (`centro.py`):**  
+   ```bash
+   cd centro_historico.py
+   ```
+4. **Execute o projeto com Python:**  
+   ```bash
+   python centro.py
+   ```
+## 👥 **Equipe**  
+
+ - **Ezequiel Pereira Alves** 
+- **José Herberty De Oliveira Freire**
+- **Lara Vitória Silva Santos Barros**
+ 
+## 🔎 Resultados
+![Modelagem 3D](fachada3d.png)
+
+
+
+
+
+
