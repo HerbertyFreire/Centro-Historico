@@ -5,7 +5,7 @@ Esta atividade faz parte da disciplina de **Computação Gráfica**, valendo not
 O objetivo é criar uma modelagem 3D da **Biblioteca Estadual em Maceió** utilizando **OpenGL**, a aplicação permite que o usuário explore a fachada e um interior simplificado do prédio histórico com uma câmera em primeira pessoa.
 
 ## 🖼 Centro Histórico 
-![Biblioteca Pública de Alagoas](fachada.png)
+![Biblioteca Pública de Alagoas](fachadaoriginal.png)
 
 ## 🛠 O que precisa para rodar?  
 
