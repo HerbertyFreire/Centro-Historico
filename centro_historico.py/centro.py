@@ -31,8 +31,44 @@ COLOR_BUTTON_BASE = (0.1, 0.2, 0.4)
 BUTTON_POS = np.array([-1.8, 1.4, 4.1])
 BUTTON_INTERACTION_RADIUS = 2.0
 
+# --- NOVAS CONSTANTES E AJUSTE DE COLISÃO ---
+PLAYER_RADIUS = 0.4 # Define um "raio" para o jogador para evitar que ele encoste demais nas paredes.
 
+# Definir a abertura da porta para quebrar a parede frontal
+DOOR_OPENING_X_MIN = -2.2  # Ajuste conforme a largura real da sua porta
+DOOR_OPENING_X_MAX = 2.2   # Ajuste conforme a largura real da sua porta
+
+INTERIOR_WALLS = [
+    # Parede Esquerda (x=-10.25, size=0.5 -> x de -10.5 a -10.0)
+    (-10.5, -10.0, 0, 9.5, -4.0, 4.0),
+    # Parede Direita (x=10.25, size=0.5 -> x de 10.0 a 10.5)
+    (10.0, 10.5, 0, 9.5, -4.0, 4.0),
+    # Parede de Trás (z=-4.25, size=0.5 -> z de -4.5 a -4.0)
+    (-10.25, 10.25, 0, 9.5, -4.5, -4.0),
+    
+    (-10.0, DOOR_OPENING_X_MIN, 0, 9.5, 3.9, 4.0),
+    
+    (DOOR_OPENING_X_MAX, 10.0, 0, 9.5, 3.9, 4.0),
+]
 # --- CÂMERA ---
+def check_collision(position, walls, radius):
+ 
+    px, py, pz = position
+    for (x_min, x_max, y_min, y_max, z_min, z_max) in walls:
+        # Encontra o ponto mais próximo na caixa ao centro da esfera
+        closest_x = max(x_min, min(px, x_max))
+        closest_y = max(y_min, min(py, y_max))
+        closest_z = max(z_min, min(pz, z_max))
+
+        # Calcula a distância entre o ponto mais próximo e o centro da esfera
+        distance_squared = (px - closest_x)**2 + (py - closest_y)**2 + (pz - closest_z)**2
+
+        # Se a distância ao quadrado for menor que o raio ao quadrado, há colisão
+        if distance_squared < (radius**2):
+            return True # Colisão detectada
+            
+    return False # Nenhuma colisão
+# --- CÂMERA (VERSÃO ATUALIZADA COM COLISÃO) ---
 class Camera:
     def __init__(self, position=(0, 1.8, 15), yaw=-90.0, pitch=0.0):
         self.position = np.array(position, dtype=float)
@@ -41,6 +77,10 @@ class Camera:
         self.player_height = 1.8
         self.gravity, self.jump_speed = -0.015, 0.25
         self.y_velocity, self.on_ground = 0, True
+        
+        # O raio do jogador é usado para colisões
+        self.player_radius = PLAYER_RADIUS 
+        
         self.update_vectors()
 
     def update_vectors(self):
@@ -62,18 +102,42 @@ class Camera:
         self.update_vectors()
 
     def update(self, keys):
+        # --- LÓGICA DE MOVIMENTO ATUALIZADA ---
+        move_vec = np.array([0.0, 0.0, 0.0])
+        
+        # Calcula o vetor de movimento horizontal desejado
         move_front = np.array([self.front[0], 0, self.front[2]])
         if np.linalg.norm(move_front) > 0: move_front /= np.linalg.norm(move_front)
+        
         move_right = self.right
-        if keys[pygame.K_w]: self.position += move_front * self.speed
-        if keys[pygame.K_s]: self.position -= move_front * self.speed
-        if keys[pygame.K_a]: self.position -= move_right * self.speed
-        if keys[pygame.K_d]: self.position += move_right * self.speed
+
+        if keys[pygame.K_w]: move_vec += move_front
+        if keys[pygame.K_s]: move_vec -= move_front
+        if keys[pygame.K_a]: move_vec -= move_right
+        if keys[pygame.K_d]: move_vec += move_right
+
+        if np.linalg.norm(move_vec) > 0:
+            move_vec /= np.linalg.norm(move_vec)
+            
+            # --- VERIFICAÇÃO DE COLISÃO COM "WALL SLIDING" ---
+            # Move e verifica no eixo X
+            potential_pos_x = self.position + np.array([move_vec[0] * self.speed, 0, 0])
+            if not check_collision(potential_pos_x, INTERIOR_WALLS, self.player_radius):
+                self.position[0] = potential_pos_x[0]
+
+            # Move e verifica no eixo Z
+            potential_pos_z = self.position + np.array([0, 0, move_vec[2] * self.speed])
+            if not check_collision(potential_pos_z, INTERIOR_WALLS, self.player_radius):
+                self.position[2] = potential_pos_z[2]
+
+        # --- LÓGICA DE GRAVIDADE E PULO (PERMANECE A MESMA) ---
         self.y_velocity += self.gravity
         self.position[1] += self.y_velocity
+        
         if keys[pygame.K_SPACE] and self.on_ground:
             self.y_velocity = self.jump_speed
             self.on_ground = False
+            
         if self.position[1] < self.player_height:
             self.position[1] = self.player_height
             self.y_velocity = 0
@@ -255,19 +319,44 @@ def draw_plant(center):
     draw_cube((x, y+0.6, z), (0.6, 0.5, 0.6), COLOR_PLANT_GREEN)
 
 def draw_round_table(center, radius=0.8, height=0.75):
+   
     x, y, z = center
-    draw_cylinder((x, y, z), 0.12, height, COLOR_TABLE_GRAY_D)
-    draw_cylinder((x, y-0.04, z), 0.35, 0.04, COLOR_TABLE_GRAY)
-    glPushMatrix(); glTranslatef(x, y+height, z); glRotatef(90, 1, 0, 0)
-    draw_cylinder((0,0,0), radius, 0.06, COLOR_TABLE_GRAY)
+
+    glPushMatrix()
+    glTranslatef(x, y, z)      
+    glRotatef(-90, 1, 0, 0)    
+    draw_cylinder((0, 0, 0), 0.12, height, COLOR_TABLE_GRAY_D)
     glPopMatrix()
 
+    glPushMatrix()
+    glTranslatef(x, y, z)      
+    glRotatef(-90, 1, 0, 0)    
+    draw_cylinder((0, 0, 0), 0.35, 0.04, COLOR_TABLE_GRAY)
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(x, y + height, z) 
+    glRotatef(-90, 1, 0, 0)   
+    draw_cylinder((0, 0, 0), radius, 0.06, COLOR_TABLE_GRAY)
+    glPopMatrix()
+
+
+
+
 def draw_round_table_with_chairs(center, table_radius=0.8):
+  
     cx, cy, cz = center
+
     draw_round_table(center, table_radius, height=0.75)
-    d = table_radius + 0.70
-    draw_chair((cx, cy, cz+d), 180); draw_chair((cx, cy, cz-d), 0)
-    draw_chair((cx+d, cy, cz), -90); draw_chair((cx-d, cy, cz), 90)
+
+
+    chair_offset = 0.5
+    distance_from_center = table_radius + chair_offset
+
+    draw_chair((cx, cy, cz - distance_from_center), 0)
+    draw_chair((cx, cy, cz + distance_from_center), 180)
+    draw_chair((cx + distance_from_center, cy, cz), -90)
+    draw_chair((cx - distance_from_center, cy, cz), 90)
 
 def draw_wall_clock(center, radius=0.5, orientation='x'):
     x, y, z = center
@@ -326,7 +415,6 @@ def draw_ornate_window(center, size):
     draw_arched_opening((x,y,z-0.02), (sx+0.2,sy+0.2,sz), COLOR_MOLDING)
     draw_arched_opening((x,y,z), (sx,sy,sz), COLOR_DOOR_WINDOW)
     
-    # Adicionado para corrigir o Z-Fighting (linhas quebradas)
     glEnable(GL_POLYGON_OFFSET_FILL)
     glPolygonOffset(-1.0, -1.0)
     
@@ -334,7 +422,6 @@ def draw_ornate_window(center, size):
     for offset in [-0.4, 0.0, 0.4]:
         draw_cube((x+offset, y, z+0.01), (0.05, sy*0.9, 0.02), COLOR_MOLDING)
         
-    # Desativa para não afetar o resto dos desenhos
     glDisable(GL_POLYGON_OFFSET_FILL)
 
 def draw_building_facade():
@@ -368,7 +455,6 @@ def draw_interactive_double_door(is_open):
     draw_cube((0,0,0), (dw,dh,dt), COLOR_DOOR_WINDOW); glPopMatrix()
 
 def draw_door_button():
-    """Desenha um botão azul com relevo ao lado da porta."""
     base_size = (0.25, 0.25, 0.02)
     button_size = (0.2, 0.2, 0.05)
     draw_cube(tuple(BUTTON_POS), base_size, COLOR_BUTTON_BASE)
@@ -435,13 +521,18 @@ def is_inside_building(cam_pos):
 
 def main():
     pygame.init()
-    display_size = (1280, 720)
+    # A linha 'display_size = (1280, 720)' foi removida.
 
     # <--- ADICIONADO PARA ATIVAR O ANTI-ALIASING ---
     pygame.display.gl_set_attribute(pygame.GL_MULTISAMPLEBUFFERS, 1)
-    pygame.display.gl_set_attribute(pygame.GL_MULTISAMPLESAMPLES, 4) # 4x. Pode aumentar para 8.
+    pygame.display.gl_set_attribute(pygame.GL_MULTISAMPLESAMPLES, 4)
     
-    pygame.display.set_mode(display_size, DOUBLEBUF|OPENGL)
+    # --- MODIFICAÇÃO PARA TELA CHEIA ---
+    # 1. Define o modo de exibição para tela cheia usando (0, 0) e a flag FULLSCREEN.
+    #    O Pygame usará a resolução atual do seu monitor.
+    screen = pygame.display.set_mode((0, 0), DOUBLEBUF|OPENGL|FULLSCREEN)
+    # ------------------------------------
+    
     pygame.display.set_caption("Biblioteca Pública Estadual de Alagoas - Maceió")
     
     # Ativa o Multisampling no pipeline do OpenGL
@@ -449,7 +540,14 @@ def main():
     # ------------------------------------------------
 
     glEnable(GL_DEPTH_TEST); glEnable(GL_CULL_FACE); glCullFace(GL_BACK)
-    gluPerspective(45, (display_size[0]/display_size[1]), 0.1, 100.0)
+    
+    # --- ATUALIZAÇÃO DA PERSPECTIVA ---
+    # 2. Obtém as dimensões reais da tela criada e usa na perspectiva
+    #    para evitar que a imagem fique esticada ou achatada.
+    width, height = screen.get_size()
+    gluPerspective(45, (width/height), 0.1, 100.0)
+    # ------------------------------------
+    
     camera = Camera(position=[0,1.8,15], yaw=-90) # Posição inicial
     is_door_open = False
     pygame.mouse.set_visible(False); pygame.event.set_grab(True)
@@ -457,6 +555,7 @@ def main():
     running = True
     print("\n--- CONTROLES ---\nW,A,S,D: Mover\nMouse: Olhar\nEspaço: Pular\nF: Abrir/Fechar Porta (Geral)\nE: Interagir com Botão (Perto)\nESC: Sair\n-----------------")
     
+    # O restante do loop while continua exatamente o mesmo...
     while running:
         keys = pygame.key.get_pressed()
         for event in pygame.event.get():
