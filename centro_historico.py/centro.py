@@ -5,7 +5,7 @@ from OpenGL.GLU import *
 import numpy as np
 import math
 
-# --- CORES ---
+# CORES 
 COLOR_WALL = (0.98, 0.82, 0.76)
 COLOR_DOOR_WINDOW = (0.01, 0.22, 0.45)
 COLOR_MOLDING = (0.95, 0.94, 0.90)
@@ -25,50 +25,49 @@ FLOOR_Y = 0.03
 COLOR_BLACK = (0.0, 0.0, 0.0)
 COLOR_WHITE = (0.97, 0.97, 0.97)
 COLOR_FRAME = (0.40, 0.26, 0.12)
-# --- NOVAS CORES E CONSTANTES DO BOTÃO ---
+#  NOVAS CORES E CONSTANTES DO BOTÃO 
 COLOR_BUTTON_BLUE = (0.2, 0.4, 0.8)
 COLOR_BUTTON_BASE = (0.1, 0.2, 0.4)
 BUTTON_POS = np.array([-1.8, 1.4, 4.1])
 BUTTON_INTERACTION_RADIUS = 2.0
 
-# --- NOVAS CONSTANTES E AJUSTE DE COLISÃO ---
-PLAYER_RADIUS = 0.4 # Define um "raio" para o jogador para evitar que ele encoste demais nas paredes.
-
+#  NOVAS CONSTANTES E AJUSTE DE COLISÃO 
+PLAYER_RADIUS = 0.4 
 # Definir a abertura da porta para quebrar a parede frontal
-DOOR_OPENING_X_MIN = -2.2  # Ajuste conforme a largura real da sua porta
-DOOR_OPENING_X_MAX = 2.2   # Ajuste conforme a largura real da sua porta
+DOOR_OPENING_X_MIN = -2.2  
+DOOR_OPENING_X_MAX = 2.2  
 
 INTERIOR_WALLS = [
-    # Parede Esquerda (x=-10.25, size=0.5 -> x de -10.5 a -10.0)
+   
     (-10.5, -10.0, 0, 9.5, -4.0, 4.0),
-    # Parede Direita (x=10.25, size=0.5 -> x de 10.0 a 10.5)
+   
     (10.0, 10.5, 0, 9.5, -4.0, 4.0),
-    # Parede de Trás (z=-4.25, size=0.5 -> z de -4.5 a -4.0)
+    
     (-10.25, 10.25, 0, 9.5, -4.5, -4.0),
     
     (-10.0, DOOR_OPENING_X_MIN, 0, 9.5, 3.9, 4.0),
     
     (DOOR_OPENING_X_MAX, 10.0, 0, 9.5, 3.9, 4.0),
 ]
-# --- CÂMERA ---
+#  CÂMERA 
 def check_collision(position, walls, radius):
  
     px, py, pz = position
     for (x_min, x_max, y_min, y_max, z_min, z_max) in walls:
-        # Encontra o ponto mais próximo na caixa ao centro da esfera
+       
         closest_x = max(x_min, min(px, x_max))
         closest_y = max(y_min, min(py, y_max))
         closest_z = max(z_min, min(pz, z_max))
 
-        # Calcula a distância entre o ponto mais próximo e o centro da esfera
+        
         distance_squared = (px - closest_x)**2 + (py - closest_y)**2 + (pz - closest_z)**2
 
-        # Se a distância ao quadrado for menor que o raio ao quadrado, há colisão
+      
         if distance_squared < (radius**2):
-            return True # Colisão detectada
+            return True
             
-    return False # Nenhuma colisão
-# --- CÂMERA (VERSÃO ATUALIZADA COM COLISÃO) ---
+    return False
+#  CÂMERA (VERSÃO ATUALIZADA COM COLISÃO) 
 class Camera:
     def __init__(self, position=(0, 1.8, 15), yaw=-90.0, pitch=0.0):
         self.position = np.array(position, dtype=float)
@@ -102,10 +101,10 @@ class Camera:
         self.update_vectors()
 
     def update(self, keys):
-        # --- LÓGICA DE MOVIMENTO ATUALIZADA ---
+        #  LÓGICA DE MOVIMENTO ATUALIZADA 
         move_vec = np.array([0.0, 0.0, 0.0])
         
-        # Calcula o vetor de movimento horizontal desejado
+      
         move_front = np.array([self.front[0], 0, self.front[2]])
         if np.linalg.norm(move_front) > 0: move_front /= np.linalg.norm(move_front)
         
@@ -119,18 +118,17 @@ class Camera:
         if np.linalg.norm(move_vec) > 0:
             move_vec /= np.linalg.norm(move_vec)
             
-            # --- VERIFICAÇÃO DE COLISÃO COM "WALL SLIDING" ---
-            # Move e verifica no eixo X
+           
             potential_pos_x = self.position + np.array([move_vec[0] * self.speed, 0, 0])
             if not check_collision(potential_pos_x, INTERIOR_WALLS, self.player_radius):
                 self.position[0] = potential_pos_x[0]
 
-            # Move e verifica no eixo Z
+           
             potential_pos_z = self.position + np.array([0, 0, move_vec[2] * self.speed])
             if not check_collision(potential_pos_z, INTERIOR_WALLS, self.player_radius):
                 self.position[2] = potential_pos_z[2]
 
-        # --- LÓGICA DE GRAVIDADE E PULO (PERMANECE A MESMA) ---
+        #  LÓGICA DE GRAVIDADE E PULO (PERMANECE A MESMA) 
         self.y_velocity += self.gravity
         self.position[1] += self.y_velocity
         
@@ -149,7 +147,7 @@ class Camera:
                   look_at_point[0], look_at_point[1], look_at_point[2],
                   self.up[0], self.up[1], self.up[2])
 
-# --- FUNÇÕES DE DESENHO PRIMITIVAS ---
+#  FUNÇÕES DE DESENHO PRIMITIVAS 
 def draw_cube(center, size, color):
     x, y, z = center
     sx, sy, sz = size
@@ -231,7 +229,7 @@ def draw_disk_yz(radius, x, cy, cz, color, slices=64):
     glEnable(GL_CULL_FACE)
 
 
-# --- FUNÇÕES DE DESENHO (OBJETOS / MÓVEIS) ---
+#  FUNÇÕES DE DESENHO OBJETOS / MÓVEIS
 def draw_book(bx, by, bz, w, h, d, color, lean_deg=0):
     glPushMatrix()
     glTranslatef(bx, by, bz)
@@ -395,7 +393,7 @@ def draw_painting(center, width=2.2, height=1.3, orientation='z'):
         glPushMatrix(); glTranslatef(R-inner_h*0.3, T-inner_h*0.2, 0); draw_disk_xy(inner_h*0.12, plane+0.0015, sun, 72); glPopMatrix()
     glEnable(GL_CULL_FACE)
 
-# --- FACHADA / EXTERIOR ---
+# FACHADA / EXTERIOR
 def draw_balcony(center, size):
     x,y,z = center
     sx,sz = size
@@ -521,41 +519,35 @@ def is_inside_building(cam_pos):
 
 def main():
     pygame.init()
-    # A linha 'display_size = (1280, 720)' foi removida.
+   
 
-    # <--- ADICIONADO PARA ATIVAR O ANTI-ALIASING ---
+   
     pygame.display.gl_set_attribute(pygame.GL_MULTISAMPLEBUFFERS, 1)
     pygame.display.gl_set_attribute(pygame.GL_MULTISAMPLESAMPLES, 4)
     
-    # --- MODIFICAÇÃO PARA TELA CHEIA ---
-    # 1. Define o modo de exibição para tela cheia usando (0, 0) e a flag FULLSCREEN.
-    #    O Pygame usará a resolução atual do seu monitor.
+   
     screen = pygame.display.set_mode((0, 0), DOUBLEBUF|OPENGL|FULLSCREEN)
-    # ------------------------------------
-    
+   
     pygame.display.set_caption("Biblioteca Pública Estadual de Alagoas - Maceió")
     
-    # Ativa o Multisampling no pipeline do OpenGL
+   
     glEnable(GL_MULTISAMPLE)
-    # ------------------------------------------------
-
+   
     glEnable(GL_DEPTH_TEST); glEnable(GL_CULL_FACE); glCullFace(GL_BACK)
     
-    # --- ATUALIZAÇÃO DA PERSPECTIVA ---
-    # 2. Obtém as dimensões reais da tela criada e usa na perspectiva
-    #    para evitar que a imagem fique esticada ou achatada.
+  
     width, height = screen.get_size()
     gluPerspective(45, (width/height), 0.1, 100.0)
-    # ------------------------------------
+  
     
-    camera = Camera(position=[0,1.8,15], yaw=-90) # Posição inicial
+    camera = Camera(position=[0,1.8,15], yaw=-90) 
     is_door_open = False
     pygame.mouse.set_visible(False); pygame.event.set_grab(True)
     clock = pygame.time.Clock()
     running = True
     print("\n--- CONTROLES ---\nW,A,S,D: Mover\nMouse: Olhar\nEspaço: Pular\nF: Abrir/Fechar Porta (Geral)\nE: Interagir com Botão (Perto)\nESC: Sair\n-----------------")
     
-    # O restante do loop while continua exatamente o mesmo...
+    
     while running:
         keys = pygame.key.get_pressed()
         for event in pygame.event.get():
@@ -606,3 +598,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
