@@ -25,6 +25,12 @@ FLOOR_Y = 0.03
 COLOR_BLACK = (0.0, 0.0, 0.0)
 COLOR_WHITE = (0.97, 0.97, 0.97)
 COLOR_FRAME = (0.40, 0.26, 0.12)
+# --- NOVAS CORES E CONSTANTES DO BOTÃO ---
+COLOR_BUTTON_BLUE = (0.2, 0.4, 0.8)
+COLOR_BUTTON_BASE = (0.1, 0.2, 0.4)
+BUTTON_POS = np.array([-1.8, 1.4, 4.1])
+BUTTON_INTERACTION_RADIUS = 2.0
+
 
 # --- CÂMERA ---
 class Camera:
@@ -313,14 +319,23 @@ def draw_balcony(center, size):
         post_x = (x-sx/2) + (sx/12)*i
         draw_cube((post_x, y+balcony_height/2, z+sz), (0.04, balcony_height, 0.04), COLOR_BALCONY_GRILL)
 
+# <--- FUNÇÃO MODIFICADA ---
 def draw_ornate_window(center, size):
     x, y, z = center
     sx, sy, sz = size
     draw_arched_opening((x,y,z-0.02), (sx+0.2,sy+0.2,sz), COLOR_MOLDING)
     draw_arched_opening((x,y,z), (sx,sy,sz), COLOR_DOOR_WINDOW)
+    
+    # Adicionado para corrigir o Z-Fighting (linhas quebradas)
+    glEnable(GL_POLYGON_OFFSET_FILL)
+    glPolygonOffset(-1.0, -1.0)
+    
     draw_cube((x, y, z+0.01), (sx*0.9, 0.05, 0.02), COLOR_MOLDING)
     for offset in [-0.4, 0.0, 0.4]:
         draw_cube((x+offset, y, z+0.01), (0.05, sy*0.9, 0.02), COLOR_MOLDING)
+        
+    # Desativa para não afetar o resto dos desenhos
+    glDisable(GL_POLYGON_OFFSET_FILL)
 
 def draw_building_facade():
     draw_cube((0,4.75,-4.05), (20,9.5,0.1), COLOR_WALL)
@@ -351,6 +366,14 @@ def draw_interactive_double_door(is_open):
     draw_cube((0,0,0), (dw,dh,dt), COLOR_DOOR_WINDOW); glPopMatrix()
     glPushMatrix(); glTranslatef(1.1,0,4.0+dt/2); glRotatef(-angle,0,1,0); glTranslatef(-dw/2,dh/2,0)
     draw_cube((0,0,0), (dw,dh,dt), COLOR_DOOR_WINDOW); glPopMatrix()
+
+def draw_door_button():
+    """Desenha um botão azul com relevo ao lado da porta."""
+    base_size = (0.25, 0.25, 0.02)
+    button_size = (0.2, 0.2, 0.05)
+    draw_cube(tuple(BUTTON_POS), base_size, COLOR_BUTTON_BASE)
+    button_center = (BUTTON_POS[0], BUTTON_POS[1], BUTTON_POS[2] + 0.02)
+    draw_cube(button_center, button_size, COLOR_BUTTON_BLUE)
 
 def draw_ramp():
     ramp_color, handrail_color = (0.7,0.7,0.7), (0.4,0.4,0.4)
@@ -413,27 +436,52 @@ def is_inside_building(cam_pos):
 def main():
     pygame.init()
     display_size = (1280, 720)
+
+    # <--- ADICIONADO PARA ATIVAR O ANTI-ALIASING ---
+    pygame.display.gl_set_attribute(pygame.GL_MULTISAMPLEBUFFERS, 1)
+    pygame.display.gl_set_attribute(pygame.GL_MULTISAMPLESAMPLES, 4) # 4x. Pode aumentar para 8.
+    
     pygame.display.set_mode(display_size, DOUBLEBUF|OPENGL)
     pygame.display.set_caption("Biblioteca Pública Estadual de Alagoas - Maceió")
+    
+    # Ativa o Multisampling no pipeline do OpenGL
+    glEnable(GL_MULTISAMPLE)
+    # ------------------------------------------------
+
     glEnable(GL_DEPTH_TEST); glEnable(GL_CULL_FACE); glCullFace(GL_BACK)
     gluPerspective(45, (display_size[0]/display_size[1]), 0.1, 100.0)
-    camera = Camera(position=[0,1.8,25], yaw=-90) # Posição inicial
+    camera = Camera(position=[0,1.8,15], yaw=-90) # Posição inicial
     is_door_open = False
     pygame.mouse.set_visible(False); pygame.event.set_grab(True)
     clock = pygame.time.Clock()
     running = True
-    print("\n--- CONTROLES ---\nW,A,S,D: Mover\nMouse: Olhar\nEspaço: Pular\nF: Abrir/Fechar Porta\nESC: Sair\n-----------------")
+    print("\n--- CONTROLES ---\nW,A,S,D: Mover\nMouse: Olhar\nEspaço: Pular\nF: Abrir/Fechar Porta (Geral)\nE: Interagir com Botão (Perto)\nESC: Sair\n-----------------")
+    
     while running:
         keys = pygame.key.get_pressed()
         for event in pygame.event.get():
-            if event.type==pygame.QUIT or (event.type==pygame.KEYDOWN and event.key==pygame.K_ESCAPE): running=False
-            if event.type==pygame.KEYDOWN and event.key==pygame.K_f: is_door_open = not is_door_open
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                if event.key == pygame.K_f:
+                    is_door_open = not is_door_open
+                if event.key == pygame.K_e:
+                    button_world_pos = BUTTON_POS + np.array([0, 0.5, 0])
+                    distance = np.linalg.norm(camera.position - button_world_pos)
+                    if distance < BUTTON_INTERACTION_RADIUS:
+                        is_door_open = not is_door_open
+
         mouse_rel = pygame.mouse.get_rel()
         camera.process_mouse(mouse_rel[0], mouse_rel[1]); camera.update(keys)
         inside = is_inside_building(camera.position)
+        
         glClearColor(*(COLOR_INTERIOR_WALL if inside else (0.5,0.8,1.0)), 1.0)
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        
         glPushMatrix(); camera.look()
+        
         if not inside:
             draw_ground()
             glPushMatrix(); glTranslatef(0,0.5,0)
@@ -445,12 +493,16 @@ def main():
             glPushMatrix(); glTranslatef(0,0.5,0)
             draw_interior(hide_exterior=True)
             glPopMatrix()
+        
         glPushMatrix(); glTranslatef(0,0.5,0)
         draw_interactive_double_door(is_door_open)
+        draw_door_button()
         glPopMatrix()
+        
         glPopMatrix()
         pygame.display.flip()
         clock.tick(60)
+        
     pygame.quit()
 
 if __name__ == "__main__":
