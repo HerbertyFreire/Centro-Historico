@@ -41,6 +41,8 @@ O objetivo é criar uma modelagem 3D da **Biblioteca Estadual em Maceió** utili
  
 ## 🔎 Resultados
 ![Modelagem 3D](fachada3d.png)
+![Quadro](quadro.png)
+![Estante](estante.png)
 
 
 
