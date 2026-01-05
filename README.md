@@ -2,7 +2,7 @@
 # Modelagem 3D da Biblioteca Pública de Alagoas
 
 ## 🎯 Objetivo  
-Esta atividade faz parte da disciplina de **Computação Gráfica**, valendo nota na **AB1** do curso de **Ciência da Computação**.  
+Esta atividade faz parte da disciplina de **Computação Gráfica**, valendo nota na **AB1** do curso de **Ciência da Computação da UFAL**.  
 O objetivo é criar uma modelagem 3D da **Biblioteca Estadual em Maceió** utilizando **OpenGL**, a aplicação permite que o usuário explore a fachada e um interior simplificado do prédio histórico com uma câmera em primeira pessoa.
 
 ## 🖼 Centro Histórico 
